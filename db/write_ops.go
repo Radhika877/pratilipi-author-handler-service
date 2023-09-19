@@ -36,46 +36,41 @@ func NewAuthorFollowerCountStruct(authorId string, noOfFollowers int) AuthorFoll
 	}
 }
 
-func UpdateAuthorPremiumStatus(config *lib.Config, authorPayload AuthorPremiumStruct) error {
-	mongoClient := config.MongoDBCollection.MongoClient
-	collection := mongoClient.Database("author-db").Collection("author-details")
+func UpdateAuthorPremiumStatus(config *lib.Config, authorPayload AuthorPremiumStruct) (authorModel.AuthorDetails, error) {
 	filter := bson.M{"authorId": authorPayload.AuthorId}
 	update := bson.M{
 		"$set": bson.M{"isPremiumAuthor": authorPayload.IsPremiumAuthor},
 	}
-	options := options.FindOneAndUpdate().SetReturnDocument(options.After)
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "REQUEST_ID", time.Now().UnixNano())
-	var updatedDocument authorModel.AuthorDetails
-	res := collection.FindOneAndUpdate(ctx, filter, update, options).Decode(&updatedDocument)
-	if res != nil {
-		log.Printf("Error: %v\n", res)
-		return res
-	} else {
-		log.Printf("Updated document: %+v\n", updatedDocument)
-		return nil
+	updatedDoc, updateErr := findOneAndUpdate(config, "author-details", authorPayload.AuthorId, filter, update)
+	if updateErr != nil {
+		return updatedDoc, updateErr
 	}
+	return updatedDoc, nil
 }
 
 func UpdateAuthorDetails(config *lib.Config, payload authorModel.AddAuthorContent) (authorModel.AuthorDetails, error) {
-	mongoClient := config.MongoDBCollection.MongoClient
-	collection := mongoClient.Database("author-db").Collection("author-details")
 	filter := bson.M{"authorId": payload.AuthorId}
 	update := bson.M{
 		"$inc": bson.M{"noOfPosts": 1},
 		"$set": bson.M{"lastPublishedAt": primitive.Timestamp{T: uint32(time.Now().Unix()), I: 0}},
 	}
-	options := options.FindOneAndUpdate().SetReturnDocument(options.After)
-	var updatedDocument authorModel.AuthorDetails
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "REQUEST_ID", time.Now().UnixNano())
-	err := collection.FindOneAndUpdate(ctx, filter, update, options).Decode(&updatedDocument)
-	if err != nil {
-		log.Printf("Error: %s", err)
-		return updatedDocument, err
+	updatedDoc, updateErr := findOneAndUpdate(config, "author-details", payload.AuthorId, filter, update)
+	if updateErr != nil {
+		return updatedDoc, updateErr
 	}
-	log.Printf("Updated document: %v", updatedDocument)
-	return updatedDocument, nil
+	return updatedDoc, nil
+}
+
+func UpdateAuthorFollowerCount(config *lib.Config, authorFollowerCount AuthorFollowerCountStruct) (authorModel.AuthorDetails, error) {
+	filter := bson.M{"authorId": authorFollowerCount.AuthorId}
+	update := bson.M{
+		"$inc": bson.M{"noOfFollowers": authorFollowerCount.NoOfFollowers},
+	}
+	updatedDoc, updateErr := findOneAndUpdate(config, "author-details", authorFollowerCount.AuthorId, filter, update)
+	if updateErr != nil {
+		return updatedDoc, updateErr
+	}
+	return updatedDoc, nil
 }
 
 func UpdateAuthorEligibilityConfig(config *lib.Config, updates map[string]interface{}) error {
@@ -98,13 +93,9 @@ func UpdateAuthorEligibilityConfig(config *lib.Config, updates map[string]interf
 	}
 }
 
-func UpdateAuthorFollowerCount(config *lib.Config, authorFollowerCount AuthorFollowerCountStruct) (authorModel.AuthorDetails, error) {
+func findOneAndUpdate(config *lib.Config, collectionName string, authorId string, filter primitive.M, update primitive.M) (authorModel.AuthorDetails, error) {
 	mongoClient := config.MongoDBCollection.MongoClient
-	collection := mongoClient.Database("author-db").Collection("author-details")
-	filter := bson.M{"authorId": authorFollowerCount.AuthorId}
-	update := bson.M{
-		"$inc": bson.M{"noOfFollowers": authorFollowerCount.NoOfFollowers},
-	}
+	collection := mongoClient.Database("author-db").Collection(collectionName)
 	options := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	var updatedDocument authorModel.AuthorDetails
 	ctx := context.Background()

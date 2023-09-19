@@ -31,7 +31,7 @@ func HandleConsumer(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Printf("isPremiumAuthor %v Condition for author %v with request ID %v", isPremiumAuthor, author.AuthorId, ctx.Value("REQUEST_ID"))
 		updateData := db.NewAuthorPremiumStruct(isPremiumAuthor, author.AuthorId)
-		updateStatusErr := db.UpdateAuthorPremiumStatus(&config, updateData)
+		_, updateStatusErr := db.UpdateAuthorPremiumStatus(&config, updateData)
 		if updateStatusErr != nil {
 			log.Printf("Error in updating premium author status: %s with request ID %v", updateStatusErr, ctx.Value("REQUEST_ID"))
 			http.Error(w, "Error", http.StatusBadRequest)

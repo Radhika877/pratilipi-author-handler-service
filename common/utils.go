@@ -36,7 +36,7 @@ func ComputeAndUpdateIsPremiumAuthor(config *lib.Config, authorId string, ctx co
 		log.Printf("isPremiumAuthor value is same in db hence not updating for author %v", authorId)
 	}
 	updateAuthorStruct := db.NewAuthorPremiumStruct(isPremiumAuthor, authorId)
-	updatePremiumErr := db.UpdateAuthorPremiumStatus(config, updateAuthorStruct)
+	_, updatePremiumErr := db.UpdateAuthorPremiumStatus(config, updateAuthorStruct)
 	if updatePremiumErr != nil {
 		return updatePremiumErr
 	}
