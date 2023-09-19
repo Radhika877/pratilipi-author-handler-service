@@ -11,22 +11,28 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func GetAllAuthors(config *lib.Config, ctx context.Context) []authorModel.AuthorDetails {
+func GetAllAuthors(config *lib.Config, ctx context.Context) ([]authorModel.AuthorDetails, error) {
 	mongoClient := config.MongoDBCollection.MongoClient
 	collection := mongoClient.Database("author-db").Collection("author-details")
 	var result []authorModel.AuthorDetails
-	curr, err := collection.Find(ctx, bson.M{"isAuthor": true})
+	filter := bson.M{"isAuthor": true}
+	curr, err := collection.Find(ctx, filter)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
+	defer curr.Close(ctx)
 	for curr.Next(ctx) {
 		var authorData authorModel.AuthorDetails
-		if err := curr.Decode(authorData); err != nil {
-			log.Printf("Error decoding author data %s", err)
+		if err := curr.Decode(&authorData); err != nil {
+			log.Printf("Error decoding author data: %s", err)
+			continue
 		}
 		result = append(result, authorData)
 	}
-	return result
+	if err := curr.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func GetAuthorByAuthorId(config *lib.Config, authorId string) authorModel.AuthorDetails {
