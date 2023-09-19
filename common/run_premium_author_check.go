@@ -9,10 +9,8 @@ import (
 
 func RunPremiumAuthorCheck(config *lib.Config, ctx context.Context) {
 	authors := db.GetAllAuthors(config, ctx)
-	authorEligibilityConfig := db.GetAuthorEligiblityConfig(config, ctx)
 	for _, author := range authors {
-		isPremium := GetIsPremiumAuthorCondition(author, authorEligibilityConfig)
-		err := UpdateAuthorPremiumStatus(config, author.AuthorId, isPremium)
+		err := ComputeAndUpdateIsPremiumAuthor(config, author.AuthorId)
 		if err != nil {
 			log.Printf("Error updating author: %v", err)
 		}

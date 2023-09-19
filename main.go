@@ -25,16 +25,18 @@ func main() {
 
 	//Author APIs
 	authorContentRouter := r.PathPrefix("/author").Subrouter()
-	authorContentRouter.HandleFunc("/content", PublishContent).Methods("POST")
+	authorContentRouter.HandleFunc("/content", PublishContent).Methods("POST")                      //API for author to publish content followed by premium status ops
+	authorContentRouter.HandleFunc("/{authorId}/followers", SimulateAuthorFollowers).Methods("PUT") // API to simulate author's followers count
+	authorContentRouter.HandleFunc("/sync-premium", PremiumAuthorDailySync)                         //API to hit daily sync funcion to update author's premium flag
 	http.Handle("/", r)
 
 	//Queue (Consumer) API
 	queueRouter := r.PathPrefix("/queue").Subrouter()
-	queueRouter.HandleFunc("/consumer", HandleConsumer)
+	queueRouter.HandleFunc("/consumer", HandleConsumer).Methods("POST") //API being used as webhook to handle consumer
 
 	//Premium Author Configuration API
 	configRouter := r.PathPrefix("/config").Subrouter()
-	configRouter.HandleFunc("/", ConfigModification).Methods("PATCH")
+	configRouter.HandleFunc("/", ConfigModification).Methods("PATCH") //API to alter global config for premium author eligiblity
 
 	//Initialise mongodb
 	mongoClient := lib.InitialiseMongoDb(&config)

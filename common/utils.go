@@ -5,6 +5,8 @@ import (
 	"author-handler-service/lib"
 	authorModel "author-handler-service/models/author_details"
 	authorEligiblityConfig "author-handler-service/models/author_eligiblity_config"
+	"context"
+	"log"
 	"time"
 )
 
@@ -25,7 +27,20 @@ func MockSendContentToPremiumUsers() bool {
 	return true
 }
 
-func UpdateAuthorPremiumStatus(config *lib.Config, authorID string, isPremium bool) error {
-	updateAuthorStruct := db.NewAuthorPremiumStruct(isPremium, authorID)
-	return db.UpdateAuthorPremiumStatus(config, updateAuthorStruct)
+func ComputeAndUpdateIsPremiumAuthor(config *lib.Config, authorId string) error {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "REQUEST_ID", time.Now().UnixNano())
+	eligiblityConfig := db.GetAuthorEligiblityConfig(config, ctx)
+	authorDoc := db.GetAuthorByAuthorId(config, authorId)
+	isPremiumAuthor := GetIsPremiumAuthorCondition(authorDoc, eligiblityConfig)
+	log.Printf("isPremiumAuthor %v for aurhor %v with request ID %v", isPremiumAuthor, authorId, ctx)
+	if authorDoc.IsPremiumAuthor == isPremiumAuthor {
+		log.Printf("isPremiumAuthor value is same in db hence not updating for author %v", authorId)
+	}
+	updateAuthorStruct := db.NewAuthorPremiumStruct(isPremiumAuthor, authorId)
+	updatePremiumErr := db.UpdateAuthorPremiumStatus(config, updateAuthorStruct)
+	if updatePremiumErr != nil {
+		return updatePremiumErr
+	}
+	return nil
 }

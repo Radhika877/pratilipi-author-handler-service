@@ -11,7 +11,7 @@ import (
 func PremiumAuthorDailySync(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, "REQUEST_ID", time.Now().UnixNano())
-	commonUtils.RunPremiumAuthorCheck(&config, ctx)
+	go commonUtils.RunPremiumAuthorCheck(&config, ctx)
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "Completed daily sync to update premium authors")
 

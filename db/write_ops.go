@@ -25,6 +25,18 @@ func NewAuthorPremiumStruct(isPremiumAuthor bool, authorId string) AuthorPremium
 	}
 }
 
+type AuthorFollowerCountStruct struct {
+	AuthorId      string
+	NoOfFollowers int
+}
+
+func NewAuthorFollowerCountStruct(authorId string, noOfFollowers int) AuthorFollowerCountStruct {
+	return AuthorFollowerCountStruct{
+		AuthorId:      authorId,
+		NoOfFollowers: noOfFollowers,
+	}
+}
+
 func UpdateAuthorPremiumStatus(config *lib.Config, authorPayload AuthorPremiumStruct) error {
 	mongoClient := config.MongoDBCollection.MongoClient
 	collection := mongoClient.Database("author-db").Collection("author-details")
@@ -86,4 +98,24 @@ func UpdateAuthorEligiblityConfig(config *lib.Config, authorEligiblityConfig aut
 		fmt.Printf("Updated document: %+v\n", updatedDocument)
 		return nil
 	}
+}
+
+func UpdateAuthorFollowerCount(config *lib.Config, authorFollowerCount AuthorFollowerCountStruct) (authorModel.AuthorDetails, error) {
+	mongoClient := config.MongoDBCollection.MongoClient
+	collection := mongoClient.Database("author-db").Collection("author-details")
+	filter := bson.M{"authorId": authorFollowerCount.AuthorId}
+	update := bson.M{
+		"$inc": bson.M{"noOfPosts": authorFollowerCount.NoOfFollowers},
+	}
+	options := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	var updatedDocument authorModel.AuthorDetails
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "REQUEST_ID", time.Now().UnixNano())
+	err := collection.FindOneAndUpdate(ctx, filter, update, options).Decode(&updatedDocument)
+	if err != nil {
+		fmt.Printf("Error: %s", err)
+		return updatedDocument, err
+	}
+	fmt.Printf("Updated document: %v", updatedDocument)
+	return updatedDocument, nil
 }
