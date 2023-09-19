@@ -2,7 +2,6 @@ package main
 
 import (
 	"author-handler-service/db"
-	authoreligiblityconfig "author-handler-service/models/author_eligiblity_config"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,16 +13,17 @@ import (
 func ConfigModification(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, "REQUEST_ID", time.Now().UnixNano())
-	var payload authoreligiblityconfig.AuthorEligiblityConfig
+	var payload map[string]interface{}
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		log.Printf("%d: Invalid input, %s", ctx.Value("REQUEST_ID"), err)
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
-	updateAuthorConfigErr := db.UpdateAuthorEligiblityConfig(&config, payload)
+	log.Printf("Payload for modifying global config %v with request ID %v", payload, ctx.Value("REQUEST_ID"))
+	updateAuthorConfigErr := db.UpdateAuthorEligibilityConfig(&config, payload)
 	if updateAuthorConfigErr != nil {
-		log.Printf("Error in updating author eligiblity config %s", updateAuthorConfigErr)
+		log.Printf("Error in updating author eligiblity config %s with request ID %v", updateAuthorConfigErr, ctx.Value("REQUEST_ID"))
 		return
 	}
 	w.WriteHeader(http.StatusOK)

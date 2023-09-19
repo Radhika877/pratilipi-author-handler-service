@@ -27,7 +27,7 @@ func main() {
 	authorContentRouter := r.PathPrefix("/author").Subrouter()
 	authorContentRouter.HandleFunc("/content", PublishContent).Methods("POST")                      //API for author to publish content followed by premium status ops
 	authorContentRouter.HandleFunc("/{authorId}/followers", SimulateAuthorFollowers).Methods("PUT") // API to simulate author's followers count
-	authorContentRouter.HandleFunc("/sync-premium", PremiumAuthorDailySync)                         //API to hit daily sync funcion to update author's premium flag
+	authorContentRouter.HandleFunc("/sync-premium", PremiumAuthorDailySync).Methods("POST")         //API to hit daily sync funcion to update author's premium flag
 	http.Handle("/", r)
 
 	//Queue (Consumer) API

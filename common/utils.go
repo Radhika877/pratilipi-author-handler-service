@@ -27,13 +27,11 @@ func MockSendContentToPremiumUsers() bool {
 	return true
 }
 
-func ComputeAndUpdateIsPremiumAuthor(config *lib.Config, authorId string) error {
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "REQUEST_ID", time.Now().UnixNano())
+func ComputeAndUpdateIsPremiumAuthor(config *lib.Config, authorId string, ctx context.Context) error {
 	eligiblityConfig := db.GetAuthorEligiblityConfig(config, ctx)
 	authorDoc := db.GetAuthorByAuthorId(config, authorId)
 	isPremiumAuthor := GetIsPremiumAuthorCondition(authorDoc, eligiblityConfig)
-	log.Printf("isPremiumAuthor %v for aurhor %v with request ID %v", isPremiumAuthor, authorId, ctx)
+	log.Printf("isPremiumAuthor %v for aurhor %v with request ID %v", isPremiumAuthor, authorId, ctx.Value("REQUEST_ID"))
 	if authorDoc.IsPremiumAuthor == isPremiumAuthor {
 		log.Printf("isPremiumAuthor value is same in db hence not updating for author %v", authorId)
 	}

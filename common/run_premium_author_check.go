@@ -10,7 +10,7 @@ import (
 func RunPremiumAuthorCheck(config *lib.Config, ctx context.Context) {
 	authors := db.GetAllAuthors(config, ctx)
 	for _, author := range authors {
-		err := ComputeAndUpdateIsPremiumAuthor(config, author.AuthorId)
+		err := ComputeAndUpdateIsPremiumAuthor(config, author.AuthorId, ctx)
 		if err != nil {
 			log.Printf("Error updating author: %v", err)
 		}

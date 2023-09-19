@@ -3,9 +3,8 @@ package db
 import (
 	"author-handler-service/lib"
 	authorModel "author-handler-service/models/author_details"
-	authoreligiblityconfig "author-handler-service/models/author_eligiblity_config"
 	"context"
-	"fmt"
+	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -50,10 +49,10 @@ func UpdateAuthorPremiumStatus(config *lib.Config, authorPayload AuthorPremiumSt
 	var updatedDocument authorModel.AuthorDetails
 	res := collection.FindOneAndUpdate(ctx, filter, update, options).Decode(&updatedDocument)
 	if res != nil {
-		fmt.Printf("Error: %v\n", res)
+		log.Printf("Error: %v\n", res)
 		return res
 	} else {
-		fmt.Printf("Updated document: %+v\n", updatedDocument)
+		log.Printf("Updated document: %+v\n", updatedDocument)
 		return nil
 	}
 }
@@ -64,7 +63,7 @@ func UpdateAuthorDetails(config *lib.Config, payload authorModel.AddAuthorConten
 	filter := bson.M{"authorId": payload.AuthorId}
 	update := bson.M{
 		"$inc": bson.M{"noOfPosts": 1},
-		"$set": bson.M{"lastPublishedAt": time.Now()},
+		"$set": bson.M{"lastPublishedAt": primitive.Timestamp{T: uint32(time.Now().Unix()), I: 0}},
 	}
 	options := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	var updatedDocument authorModel.AuthorDetails
@@ -72,30 +71,29 @@ func UpdateAuthorDetails(config *lib.Config, payload authorModel.AddAuthorConten
 	ctx = context.WithValue(ctx, "REQUEST_ID", time.Now().UnixNano())
 	err := collection.FindOneAndUpdate(ctx, filter, update, options).Decode(&updatedDocument)
 	if err != nil {
-		fmt.Printf("Error: %s", err)
+		log.Printf("Error: %s", err)
 		return updatedDocument, err
 	}
-	fmt.Printf("Updated document: %v", updatedDocument)
+	log.Printf("Updated document: %v", updatedDocument)
 	return updatedDocument, nil
 }
 
-func UpdateAuthorEligiblityConfig(config *lib.Config, authorEligiblityConfig authoreligiblityconfig.AuthorEligiblityConfig) error {
+func UpdateAuthorEligibilityConfig(config *lib.Config, updates map[string]interface{}) error {
 	mongoClient := config.MongoDBCollection.MongoClient
 	collection := mongoClient.Database("author-db").Collection("author-eligiblity-config")
 	docID, _ := primitive.ObjectIDFromHex(config.ConfigDocID)
 	filter := bson.M{"_id": docID}
-	updateParams := authorEligiblityConfig.UpdateAuthorEligiblityConfigParams()
-	update := bson.M{"$set": updateParams}
+	update := bson.M{"$set": updates}
 	options := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, "REQUEST_ID", time.Now().UnixNano())
 	var updatedDocument authorModel.AuthorDetails
 	res := collection.FindOneAndUpdate(ctx, filter, update, options).Decode(&updatedDocument)
 	if res != nil {
-		fmt.Printf("Error: %v\n", res)
+		log.Printf("Error: %v", res)
 		return res
 	} else {
-		fmt.Printf("Updated document: %+v\n", updatedDocument)
+		log.Printf("Updated document: %+v", updatedDocument)
 		return nil
 	}
 }
@@ -105,7 +103,7 @@ func UpdateAuthorFollowerCount(config *lib.Config, authorFollowerCount AuthorFol
 	collection := mongoClient.Database("author-db").Collection("author-details")
 	filter := bson.M{"authorId": authorFollowerCount.AuthorId}
 	update := bson.M{
-		"$inc": bson.M{"noOfPosts": authorFollowerCount.NoOfFollowers},
+		"$inc": bson.M{"noOfFollowers": authorFollowerCount.NoOfFollowers},
 	}
 	options := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	var updatedDocument authorModel.AuthorDetails
@@ -113,9 +111,9 @@ func UpdateAuthorFollowerCount(config *lib.Config, authorFollowerCount AuthorFol
 	ctx = context.WithValue(ctx, "REQUEST_ID", time.Now().UnixNano())
 	err := collection.FindOneAndUpdate(ctx, filter, update, options).Decode(&updatedDocument)
 	if err != nil {
-		fmt.Printf("Error: %s", err)
+		log.Printf("Error: %s", err)
 		return updatedDocument, err
 	}
-	fmt.Printf("Updated document: %v", updatedDocument)
+	log.Printf("Updated document: %v", updatedDocument)
 	return updatedDocument, nil
 }
